@@ -51,7 +51,7 @@ if __name__ == '__main__':
     puzzle_config = driver.execute_script("return __puzzle__")
     dic_puzzle = eval(puzzle_config)
     for guess in dic_puzzle['_words']:
-        ActionChains(driver).send_keys(guess + Keys.ENTER).perform()
+        ActionChains(driver).send_keys(guess['word'] + Keys.ENTER).perform()
         time.sleep(.5)
     # Press next game
     driver.find_element(by=By.CSS_SELECTOR, value=".ui-button.gold").click()
