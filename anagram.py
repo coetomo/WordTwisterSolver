@@ -41,6 +41,7 @@ def ask_anagram_strategy(driver, lst_strategy=AVAILABLE_FUNCS):
     print("\nAvailable anagram strategies: ")
     for i, strat in enumerate(lst_strategy):
         print(f"{i}: {strat.__name__}")
+    print("r: 'anagram_r'")
     while True:
         ans = input(f"Choose strategy [0-{i}]: ")
         if ans == 'r':
