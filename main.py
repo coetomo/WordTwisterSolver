@@ -7,10 +7,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, TimeoutException
 import time
-import inspect
-from itertools import permutations
+
+from anagram import anagram_cheat, ask_anagram_strategy
 
 URL_TWISTER_GAME = 'https://zone.msn.com/gameplayer/gameplayerHTML.aspx?game=mswordtwister'
 EASY = 0
@@ -19,28 +18,6 @@ HARD = 2
 INIT_PLAY_BUTTON_XPATH = "/html/body/app-root/div/div[1]/app-layout/div/app-map/div/div[2]/div[2]/app-map-quick-play-view/div[2]/button"
 TIMEOUT_TIMER = 30
 ADS_TIMER = 60
-
-
-def anagram_brute(letters):
-    """
-    Returns a list of all possible orderings of letters
-    """
-    return [ordering for r in range(3, 8) for ordering in permutations(letters, r)]
-
-
-def anagram_cheat(_letters):
-    """
-    Get the actual answers through Javascript and return those answers as a list
-    """
-    # Hacky way to get the driver object from the previous stack frame; Do not try this at home! :)
-    frame = inspect.currentframe()
-    while frame:
-        if 'driver' in frame.f_locals:
-            driver = frame.f_locals['driver']
-        frame = frame.f_back
-    puzzle_config = driver.execute_script("return __puzzle__")
-    dic_puzzle = eval(puzzle_config)
-    return [dic['word'] for dic in dic_puzzle['_words']]
 
 
 def close_tab(driver, n):
@@ -86,7 +63,7 @@ def auto_setup(driver=None, url=URL_TWISTER_GAME, difficulty=EASY):
     WebDriverWait(driver, ADS_TIMER).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, ".skip-button.ui-button.red.en-US"))).click()
 
-    print("Disable tutorials in game menu...")
+    print("Disabling tutorials through in game menu...")
     WebDriverWait(driver, TIMEOUT_TIMER).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, ".button.labeled-button.menu-button"))).click()
     WebDriverWait(driver, TIMEOUT_TIMER).until(
@@ -104,7 +81,7 @@ def auto_setup(driver=None, url=URL_TWISTER_GAME, difficulty=EASY):
     WebDriverWait(driver, TIMEOUT_TIMER).until(
         EC.element_to_be_clickable((By.ID, "btnClose"))).click()
 
-    time.sleep(.75)
+    time.sleep(.5)
     # Click the Play under Quick play section
     WebDriverWait(driver, TIMEOUT_TIMER).until(
         EC.element_to_be_clickable((By.XPATH, INIT_PLAY_BUTTON_XPATH))).click()
@@ -138,15 +115,17 @@ def skip_tutorials(driver: webdriver.Chrome):
 def solve_puzzle(driver=None, url=INIT_PLAY_BUTTON_XPATH):
     if driver is None:
         driver = init_driver(url)
-    go = True
-    while go:
+    continue_puzzle = True
+    while continue_puzzle:
+        # Setup for solving puzzle
+        anagram_strategy = ask_anagram_strategy()
         input("Ready? Press Enter to continue!")
         puzzle_config = driver.execute_script("return __puzzle__")
         dic_puzzle = eval(puzzle_config)
         letters = dic_puzzle["_letters"]
-        anagram_strategy = anagram_cheat
-        retry = True
-        while retry:
+
+        retry_solve = True
+        while retry_solve:
             for guess in anagram_strategy(letters):
                 ActionChains(driver).send_keys(guess + Keys.ENTER).perform()
                 time.sleep(.75)
@@ -157,14 +136,13 @@ def solve_puzzle(driver=None, url=INIT_PLAY_BUTTON_XPATH):
                 ans = input("Done! Solve more puzzle? [y/n/r] ").lower()
                 # Continue and wait until next puzzle has been manually loaded
                 if ans == 'y':
-                    retry = False
+                    retry_solve = False
                 # Finish up the program
                 elif ans == 'n':
-                    go = False
-                    break
+                    continue_puzzle = False
                 # Restart the solving algorithm
                 elif ans == 'r':
-                    continue
+                    pass
                 else:
                     print("Invalid answer! ", end='')
                     repeat_question += 1
@@ -175,7 +153,7 @@ def main():
     driver = init_driver(URL_TWISTER_GAME)
     auto_setup(driver=driver, difficulty=NORMAL)
     solve_puzzle(driver)
-
+    print("Exiting and closing...")
     driver.close()
     driver.quit()
 
