@@ -1,13 +1,18 @@
 import inspect
 from itertools import permutations
 
+from hidden import roll
+
+MAX_BRUTE_LEN = 8
+
 
 def anagram_brute(letters):
     """
-    Returns a list of all possible orderings of letters
+    Returns a list of all possible strings using different orderings of letters
     """
-    max_len = max(len(letters)+1, 8)
-    return [ordering for r in range(3, max_len) for ordering in permutations(letters, r)]
+    print("calling brute")
+    max_len = min(len(letters)+1, MAX_BRUTE_LEN)
+    return ["".join(ordering) for r in range(3, max_len) for ordering in permutations(letters, r)]
 
 
 def anagram_cheat(_letters):
@@ -29,12 +34,18 @@ def anagram_cheat(_letters):
 AVAILABLE_FUNCS = [anagram_brute, anagram_cheat]
 
 
-def ask_anagram_strategy(lst_strategy=AVAILABLE_FUNCS):
-    print("Available anagram strategies: ")
+def ask_anagram_strategy(driver, lst_strategy=AVAILABLE_FUNCS):
+    if not lst_strategy:
+        raise ValueError("List of anagram strategies is empty")
+
+    print("\nAvailable anagram strategies: ")
     for i, strat in enumerate(lst_strategy):
-        print(i, strat.__name__)
+        print(f"{i}: {strat.__name__}")
     while True:
-        ans = input("Choose strategy: ")
-        if ans.idigit() and 0 <= ans < len(lst_strategy):
-            return lst_strategy[ans]
+        ans = input(f"Choose strategy [0-{i}]: ")
+        if ans == 'r':
+            roll(driver)
+            input()
+        if ans.isdigit() and 0 <= int(ans) < len(lst_strategy):
+            return lst_strategy[int(ans)]
         print("Invalid index! ", end='')

@@ -17,7 +17,7 @@ NORMAL = 1
 HARD = 2
 INIT_PLAY_BUTTON_XPATH = "/html/body/app-root/div/div[1]/app-layout/div/app-map/div/div[2]/div[2]/app-map-quick-play-view/div[2]/button"
 TIMEOUT_TIMER = 30
-ADS_TIMER = 60
+ADS_TIMER = 120
 
 
 def close_tab(driver, n):
@@ -118,7 +118,8 @@ def solve_puzzle(driver=None, url=INIT_PLAY_BUTTON_XPATH):
     continue_puzzle = True
     while continue_puzzle:
         # Setup for solving puzzle
-        anagram_strategy = ask_anagram_strategy()
+        anagram_strategy = ask_anagram_strategy(driver)
+        print(f"\nUsing '{anagram_strategy.__name__}'...")
         input("Ready? Press Enter to continue!")
         puzzle_config = driver.execute_script("return __puzzle__")
         dic_puzzle = eval(puzzle_config)
@@ -126,10 +127,13 @@ def solve_puzzle(driver=None, url=INIT_PLAY_BUTTON_XPATH):
 
         retry_solve = True
         while retry_solve:
+            action = ActionChains(driver)
             for guess in anagram_strategy(letters):
-                ActionChains(driver).send_keys(guess + Keys.ENTER).perform()
-                time.sleep(.75)
-                skip_tutorials(driver)
+                print("Testing:", guess);
+                action.send_keys(guess + Keys.ENTER).perform()
+                time.sleep(1)
+                action.reset_actions()
+                # skip_tutorials(driver)
 
             repeat_question = 1
             while repeat_question:
