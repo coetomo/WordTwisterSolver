@@ -12,7 +12,7 @@ def anagram_brute(letters):
     """
     print("calling brute")
     max_len = min(len(letters)+1, MAX_BRUTE_LEN)
-    return ["".join(ordering) for r in range(3, max_len) for ordering in permutations(letters, r)]
+    return set("".join(ordering) for r in range(3, max_len) for ordering in permutations(letters, r))
 
 
 def anagram_cheat(_letters):

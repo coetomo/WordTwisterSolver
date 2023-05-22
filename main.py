@@ -17,16 +17,27 @@ NORMAL = 1
 HARD = 2
 INIT_PLAY_BUTTON_XPATH = "/html/body/app-root/div/div[1]/app-layout/div/app-map/div/div[2]/div[2]/app-map-quick-play-view/div[2]/button"
 TIMEOUT_TIMER = 30
-ADS_TIMER = 120
+ADS_TIMER = 200
 
 
 def close_tab(driver, n):
+    """
+    Closes tab after installing adblock
+    :param driver: WebDriver from Selenium
+    :param n: the n-th tab
+    :return: None
+    """
     driver.switch_to.window(driver.window_handles[n])
     driver.close()
     driver.switch_to.window(driver.window_handles[0])
 
 
 def init_driver(url):
+    """
+    Initialize WebDriver settings. Must have ChromeDriver Manager installed
+    :param url: Target URL for WebDriver
+    :return: the initialized WebDriver object
+    """
     options = Options()
     options.add_argument("start-maximized")
     options.add_argument("--mute-audio")
@@ -45,74 +56,98 @@ def init_driver(url):
 
 
 def auto_setup(driver=None, url=URL_TWISTER_GAME, difficulty=EASY):
+    """
+    Automatically opens up the browser, sets up the Word Twister game online by skipping tutorial and change in-game
+    options for an undisturbed experience for the WebDriver
+    :param driver: WebDriver object
+    :param url: target URL
+    :param difficulty: the desired difficulty of the game
+    :return: None
+    """
     if driver is None:
         driver = init_driver(url)
+    wait = WebDriverWait(driver, TIMEOUT_TIMER)
+    ads_wait = WebDriverWait(driver, ADS_TIMER)
+
     # Click Play button in the main menu
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
+    wait.until(
         EC.frame_to_be_available_and_switch_to_it((By.ID, "game-player-iframe")))
-    WebDriverWait(driver, ADS_TIMER).until(
+    ads_wait.until(
         EC.element_to_be_clickable((By.ID, "btnPlayAgain"))).click()
 
     # Wait for Ads
     print("Waiting for ads...")
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
+    wait.until(
         EC.frame_to_be_available_and_switch_to_it((By.ID, "gameFrame")))
 
     # Click the skip button
     print("Skipping tutorials for babies...")
-    WebDriverWait(driver, ADS_TIMER).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, ".skip-button.ui-button.red.en-US"))).click()
+    ads_wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ".ftue-button.ui-button.red.en-US"))).click()
 
     print("Disabling tutorials through in game menu...")
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, ".button.labeled-button.menu-button"))).click()
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
+    wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "div.button"))).click()
+    wait.until(
         EC.element_to_be_clickable((By.ID, "btnGameOptions"))).click()
     time.sleep(1)
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
-        EC.presence_of_element_located((By.ID, "show-wordTwister-tutorial"))).click()
+    driver.execute_script("arguments[0].click();",wait.until(
+        EC.presence_of_element_located((By.ID, "show-wordTwister-tutorial"))))
     time.sleep(.5)
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
-        EC.presence_of_element_located((By.ID, "hints"))).click()
+    driver.execute_script("arguments[0].click();", wait.until(
+        EC.presence_of_element_located((By.ID, "hints"))))
     time.sleep(.5)
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
-        EC.presence_of_element_located((By.ID, "quick-tips"))).click()
+    driver.execute_script("arguments[0].click();", wait.until(
+        EC.presence_of_element_located((By.ID, "quick-tips"))))
     time.sleep(.5)
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
+    wait.until(
         EC.element_to_be_clickable((By.ID, "btnClose"))).click()
 
     time.sleep(.5)
     # Click the Play under Quick play section
-    WebDriverWait(driver, TIMEOUT_TIMER).until(
-        EC.element_to_be_clickable((By.XPATH, INIT_PLAY_BUTTON_XPATH))).click()
+    # WebDriverWait(driver, TIMEOUT_TIMER).until(
+    #     EC.element_to_be_clickable((By.XPATH, INIT_PLAY_BUTTON_XPATH))).click()
+    wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button.play-button.next-button.ui-button.blue"))).click()
 
     if difficulty == EASY:
         print("Playing on 'Easy' difficulty (n00b)...")
         # Click Easy button (can be changed dependant on the difficulty)
-        WebDriverWait(driver, TIMEOUT_TIMER).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".ui-button.green"))).click()
+        wait.until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.quick-play-button.ui-button.green"))).click()
     elif difficulty == NORMAL:
         print("Playing on 'Normal' difficulty (normies)...")
         # Click Easy button (can be changed dependant on the difficulty)
-        WebDriverWait(driver, TIMEOUT_TIMER).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".ui-button.yellow"))).click()
+        wait.until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.quick-play-button.ui-button.yellow"))).click()
     elif difficulty == HARD:
         print("Playing on 'Hard' difficulty (nice)...")
         # Click Easy button (can be changed dependant on the difficulty)
-        WebDriverWait(driver, TIMEOUT_TIMER).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".ui-button.red"))).click()
+        wait.until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#btnHard"))).click()
     else:
         raise ValueError("Difficulty does not exist!")
 
 
-def skip_tutorials(driver: webdriver.Chrome):
+def skip_tutorials(driver):
+    """
+    Control the driver to skip the tutorial section of the game
+    :param driver:
+    :return:
+    """
     elems = driver.find_elements(by=By.CSS_SELECTOR, value=".skip-button.ui-button.red.en-US")
     if not elems:
         return
     elems[0].click()
 
 
-def solve_puzzle(driver=None, url=INIT_PLAY_BUTTON_XPATH):
+def solve_puzzle(driver=None, url=URL_TWISTER_GAME):
+    """
+    Attempts to solve the puzzle indefinitely. Assumes that the browser game is opened.
+    :param driver: WebDriver object
+    :param url: target URL
+    :return: None
+    """
     if driver is None:
         driver = init_driver(url)
     continue_puzzle = True
@@ -129,33 +164,42 @@ def solve_puzzle(driver=None, url=INIT_PLAY_BUTTON_XPATH):
         while retry_solve:
             action = ActionChains(driver)
             for guess in anagram_strategy(letters):
-                print("Testing:", guess);
-                action.send_keys(guess + Keys.ENTER).perform()
-                time.sleep(1)
+                print("Testing:", guess)
+                action.send_keys(guess)
+                action.send_keys(Keys.ENTER)
+                action.perform()
+                time.sleep(.8)
                 action.reset_actions()
                 # skip_tutorials(driver)
 
-            repeat_question = 1
+            repeat_question = True
             while repeat_question:
                 ans = input("Done! Solve more puzzle? [y/n/r] ").lower()
                 # Continue and wait until next puzzle has been manually loaded
                 if ans == 'y':
+                    continue_puzzle = True
                     retry_solve = False
+                    repeat_question = False
                 # Finish up the program
                 elif ans == 'n':
                     continue_puzzle = False
+                    retry_solve = False
+                    repeat_question = False
                 # Restart the solving algorithm
                 elif ans == 'r':
-                    pass
+                    continue_puzzle = False
+                    retry_solve = True
+                    repeat_question = False
                 else:
                     print("Invalid answer! ", end='')
-                    repeat_question += 1
-                repeat_question -= 1
 
 
 def main():
+    """
+    Main function
+    """
     driver = init_driver(URL_TWISTER_GAME)
-    auto_setup(driver=driver, difficulty=NORMAL)
+    # auto_setup(driver=driver, difficulty=NORMAL)
     solve_puzzle(driver)
     print("Exiting and closing...")
     driver.close()
@@ -164,19 +208,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-# try:
-#     # Press next game
-#     WebDriverWait(driver, 8).until(
-#         EC.element_to_be_clickable((By.CSS_SELECTOR, ".ui-button.gold"))).click()
-#     retry = False
-# except TimeoutException as e:
-#     # The solving process was interrupted mid-execution, will need to retry
-#     print("Puzzle not finished! Retrying!")
-#     time.sleep(.75)
-# except ElementClickInterceptedException as e:
-#     # If intercepted for whatever reason, try click again (should only happen once)
-#     print("Click intercepted! Retrying to click again!")
-#     time.sleep(2)
-#     driver.find_element(by=By.CSS_SELECTOR, value=".ui-button.gold").click()
